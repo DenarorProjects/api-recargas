@@ -6,9 +6,6 @@ Proyecto api para ser consumido por una aplicación movil
 - Nodejs
 - NPM
 - mysql
-- express
-- body-parser
-- cors
 
 ## Instalación
 ```bash
