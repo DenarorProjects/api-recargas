@@ -24,4 +24,3 @@ Setear los valores de la base de datos y token de la aplicación.
 ```bash
 $ npm run dev
 ```
-
