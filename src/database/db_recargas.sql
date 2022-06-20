@@ -76,15 +76,16 @@ CREATE PROCEDURE agregar_telefono(
 	v_user				CHAR(8),
     v_saldo_initial		DECIMAL(4,2),
     v_plan_id			INT,
-    OUT p_result 		INT
+    OUT p_result 		INT,
+    OUT p_new_number	CHAR(9)
 )
 BEGIN
 	IF (SELECT count(*) FROM user WHERE dni = v_user) < 1 THEN
 		SET p_result = 0;
 	ELSE 
 		BEGIN
-			SET @p_new_number = (SELECT max(id) + 1 FROM phone_number);
-			INSERT INTO phone_number VALUES (@p_new_number, v_user, v_saldo_initial, v_plan_id);
+			SET p_new_number = (SELECT max(id) + 1 FROM phone_number);
+			INSERT INTO phone_number VALUES (p_new_number, v_user, v_saldo_initial, v_plan_id);
 			SET p_result = 1;
 		END;        
     END IF;
@@ -98,7 +99,8 @@ CREATE PROCEDURE agregar_usuario(
     v_name				VARCHAR(30),
     v_lastname			VARCHAR(150),
     v_amount			DECIMAL(4,2),
-    OUT p_result 		INT
+    OUT p_result 		INT,
+    OUT p_new_number	CHAR(9)
 )
 BEGIN
 	IF (SELECT count(*) FROM user WHERE dni = v_dni) > 0 THEN
@@ -106,8 +108,9 @@ BEGIN
 	ELSE 
 		BEGIN
 			SET p_result = 1;
+            SET p_new_number = '0';
 			INSERT INTO user VALUES (v_dni, v_name, v_lastname);
-            CALL agregar_telefono(v_dni, v_amount, 1, p_result);
+            CALL agregar_telefono(v_dni, v_amount, 1, p_result, p_new_number);
             IF(p_result = 0) THEN
 				SET p_result = -2;
             END IF;
@@ -117,12 +120,52 @@ BEGIN
 END$$
 DELIMiTER ;
 
-# CALL PROCEDURES
-CALL agregar_usuario('87654321', 'Andres', 'Carrillo', 0.0, @out_value);
-SELECT @out_value;
+DROP PROCEDURE IF EXISTS obtener_telefonos_por_usuario;
+DELIMiTER $$
+CREATE PROCEDURE obtener_telefonos_por_usuario(v_user CHAR(8))
+BEGIN
+	SELECT
+		u.dni,
+		concat(u.name,' ', u.lastname) 'Nombre cliente',
+		pn.id 'phone number',
+		pn.saldo,
+		p.description 'plan'
+	FROM user u
+	INNER JOIN phone_number pn
+		ON u.dni = pn.user_id
+	INNER JOIN plan p
+		ON p.id = pn.plan_id
+	WHERE u.dni = v_user;
+END$$
+DELIMiTER ;
 
-CALL agregar_telefono('87654321', 10.05, 1, @out_value);
-SELECT @out_value;
+DROP PROCEDURE IF EXISTS obtener_telefono_por_num_telefono;
+DELIMiTER $$
+CREATE PROCEDURE obtener_telefono_por_num_telefono(v_numb_phone CHAR(9))
+BEGIN
+	SELECT
+		pn.id 'phone number',
+        concat(u.name,' ', u.lastname) 'Nombre cliente',
+		u.dni,
+		pn.saldo,
+		p.description 'plan'
+	FROM user u
+	INNER JOIN phone_number pn
+		ON u.dni = pn.user_id
+	INNER JOIN plan p
+		ON p.id = pn.plan_id
+	WHERE pn.id = v_numb_phone;
+END$$
+DELIMiTER ;
+
+# CALL PROCEDURES
+CALL obtener_telefonos_por_usuario('76231293');
+
+CALL agregar_usuario('76231293', 'Dennis', 'Villagaray', 0.0, @out_value, @phone);
+SELECT @out_value, @phone;
+
+CALL agregar_telefono('87654321', 10.05, 1, @out_value, @phone);
+SELECT @out_value, @phone;
 
 CALL recargar_telefono('913456787', '2022-06-19', 20.0512213, @out_value);
 SELECT @out_value;
@@ -138,3 +181,11 @@ INNER JOIN phone_number pn
 	ON u.dni = pn.user_id
 INNER JOIN plan p
 	ON p.id = pn.plan_id;
+    
+
+DB_HOST=localhost
+DB_USER=root
+DB_PORT=3306
+DB_PASSWORD=Forever_hi5.
+DB_DATABASE=db_recargas
+TOKEN=C)NUrB-2yPTbFppP=7Z:8-[2e}M_D
