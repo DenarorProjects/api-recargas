@@ -10,6 +10,7 @@
     "start": "npm run babel-node src/index.js"
   },
   "dependencies": {
+    "babel-cli": "^7.0.0-0",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "promise-mysql": "^5.2.0"
